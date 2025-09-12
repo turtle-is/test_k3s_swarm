@@ -1,0 +1,24 @@
+version: "3.8"
+services:
+  stress:
+    image: nctortue/riscv-stress-ng:latest
+    environment:
+      STRESS_CPU: "3"                  # под сравнение с K3s (3 vCPU)
+      STRESS_CPU_METHOD: "matrixprod"
+      STRESS_DURATION: "600s"          # 10 минут
+    entrypoint:
+      - /bin/bash
+      - -lc
+      - 'export OUT_DIR=/results/swarm-`date +%Y%m%d-%H%M%S`; mv /usr/bin/perf /usr/bin/perf.disabled 2>/dev/null || true; exec /app/entrypoint.sh'
+    deploy:
+      replicas: 1
+      restart_policy: { condition: none }
+      resources:
+        reservations: { cpus: "2.9", memory: 512M }
+        limits:       { cpus: "3.0", memory: 1G }
+      placement:
+        constraints:
+          - node.platform.arch == riscv64
+          - node.hostname == lpi4aServer
+    volumes:
+      - /var/bench-results/swarm:/results

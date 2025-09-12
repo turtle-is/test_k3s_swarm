@@ -1,0 +1,44 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: stress-ng-bench
+spec:
+  completions: 1
+  parallelism: 1
+  template:
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: lpi4aserver
+      containers:
+      - name: stress
+        image: nctortue/riscv-stress-ng:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: STRESS_CPU
+          value: "3"
+        - name: STRESS_CPU_METHOD
+          value: "matrixprod"
+        - name: STRESS_DURATION
+          value: "600s"        # 10 минут
+        resources:
+          requests:
+            cpu: "2900m"       # запрос < лимита, чтобы Scheduler не ругался
+            memory: "512Mi"
+          limits:
+            cpu: "3"
+            memory: "1Gi"
+        command: ["/bin/bash","-lc"]
+        args:
+        - |
+          export OUT_DIR=/results/k3s-$(date +%Y%m%d-%H%M%S);
+          mv /usr/bin/perf /usr/bin/perf.disabled 2>/dev/null || true;
+          exec /app/entrypoint.sh
+        volumeMounts:
+        - name: results
+          mountPath: /results
+      volumes:
+      - name: results
+        hostPath:
+          path: /var/bench-results/k3s
+          type: DirectoryOrCreate
