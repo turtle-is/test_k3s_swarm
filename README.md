@@ -25,3 +25,39 @@
 
 ```bash
 stress-ng --cpu <N> --cpu-method matrixprod --metrics-brief --timeout <DURATION>
+
+
+
+kubectl apply -f k3s/job.yaml
+kubectl wait --timeout=15m --for=condition=complete job/stress-ng-bench
+# результаты: /var/bench-results/k3s/...
+
+
+
+docker stack deploy -c swarm/stack.yaml stressbench
+docker service logs -f stressbench_stress
+# результаты: /var/bench-results/swarm/...
+docker stack rm stressbench
+
+
+
+cd k3s
+chmod +x run_k3s_bench.sh
+# Параметры по умолчанию: RUNS=3, VCPUS=3, DURATION=600s, K8S_NODE=lpi4aserver
+RUNS=3 VCPUS=3 DURATION=600s ./run_k3s_bench.sh
+
+# результаты по прогонам:
+sudo ls -1dt /var/bench-results/k3s/k3s-*-run*
+
+
+cd swarm
+chmod +x run_swarm_bench.sh
+# Параметры по умолчанию: RUNS=3, VCPUS=3, DURATION=600s, SWARM_NODE=lpi4aServer
+RUNS=3 VCPUS=3 DURATION=600s ./run_swarm_bench.sh
+
+# результаты по прогонам:
+sudo ls -1dt /var/bench-results/swarm/swarm-*-run*
+
+
+
+python3 parse_results.py
