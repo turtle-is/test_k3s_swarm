@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: micro-host
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: micro-host
+  template:
+    metadata:
+      labels:
+        app: micro-host
+    spec:
+      hostNetwork: true
+      nodeName: lpi4aserver          
+      containers:
+      - name: s
+        image: python:3.12-slim
+        command: ["bash","-lc"]
+        args:
+          - |
+            set -e
+            mkdir -p /www
+            dd if=/dev/zero of=/www/large bs=1K count=1024
+            dd if=/dev/zero of=/www/medium bs=1K count=100
+            dd if=/dev/zero of=/www/small bs=1K count=1
+            echo "ok" > /www/index.html
+            python -m http.server 30081 --directory /www
+        ports:
+        - containerPort: 30081
+          hostPort: 30081
+
